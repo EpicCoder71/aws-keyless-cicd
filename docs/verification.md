@@ -1,5 +1,7 @@
 # Deployment verification — October 30, 2026
 
+Historical deployment record. Infrastructure has since been destroyed; see [cleanup record](cleanup.md).
+
 - AWS account: 381491979691; region: us-east-1.
 - Local application tests: 5 passed.
 - Application Checkov scan: 6 passed, 0 failed, 7 documented skips.

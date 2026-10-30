@@ -2,7 +2,9 @@
 
 Python Lambda deployments using Terraform and GitHub Actions OIDC. No AWS access keys belong in GitHub. Repository: https://github.com/EpicCoder71/aws-keyless-cicd
 
-Dev deployment verified successfully: [Actions run](https://github.com/EpicCoder71/aws-keyless-cicd/actions/runs/41009129439). See [verification details](docs/verification.md). Prod is configured but not deployed.
+**Current status: completed and torn down on October 30, 2026.** Terraform destroyed the dev application and all bootstrap resources. The project state bucket (including every version and delete marker), all project IAM roles, and its GitHub environments were removed. The deployment workflow is disabled. The shared OIDC provider and Cloud Resume site were preserved. The source remains available for a deliberate rebuild.
+
+Dev deployment was previously verified successfully: [Actions run](https://github.com/EpicCoder71/aws-keyless-cicd/actions/runs/41009129439). See [verification details](docs/verification.md) and [cleanup record](docs/cleanup.md).
 
 ## Architecture
 
