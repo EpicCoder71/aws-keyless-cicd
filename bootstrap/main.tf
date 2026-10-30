@@ -49,7 +49,7 @@ resource "aws_iam_role_policy" "runtime" {
   for_each = local.environments
   role     = aws_iam_role.runtime[each.key].id
   policy = jsonencode({ Version = "2012-10-17", Statement = [
-    { Effect = "Allow", Action = ["logs:CreateLogStream", "logs:PutLogEvents"], Resource = "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/keyless-cicd-${each.key}:*" },
+    { Effect = "Allow", Action = ["logs:CreateLogStream", "logs:PutLogEvents"], Resource = ["arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/keyless-cicd-${each.key}", "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/keyless-cicd-${each.key}:*"] },
     { Effect = "Allow", Action = ["xray:PutTraceSegments", "xray:PutTelemetryRecords"], Resource = "*" }
   ] })
 }
@@ -71,7 +71,7 @@ resource "aws_iam_role_policy" "deploy" {
     { Effect = "Allow", Action = ["lambda:CreateFunction", "lambda:GetFunction", "lambda:GetFunctionConfiguration", "lambda:UpdateFunctionCode", "lambda:UpdateFunctionConfiguration", "lambda:DeleteFunction", "lambda:ListVersionsByFunction", "lambda:GetFunctionCodeSigningConfig", "lambda:GetPolicy", "lambda:ListTags", "lambda:TagResource", "lambda:UntagResource", "lambda:PutFunctionConcurrency", "lambda:GetFunctionConcurrency", "lambda:DeleteFunctionConcurrency", "lambda:InvokeFunction"], Resource = "arn:aws:lambda:${var.aws_region}:${var.account_id}:function:keyless-cicd-${each.key}" },
     { Effect = "Allow", Action = ["iam:GetRole"], Resource = aws_iam_role.runtime[each.key].arn },
     { Effect = "Allow", Action = ["iam:PassRole"], Resource = aws_iam_role.runtime[each.key].arn, Condition = { StringEquals = { "iam:PassedToService" = "lambda.amazonaws.com" } } },
-    { Effect = "Allow", Action = ["logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:PutRetentionPolicy", "logs:DeleteRetentionPolicy", "logs:ListTagsForResource", "logs:TagResource", "logs:UntagResource"], Resource = "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/keyless-cicd-${each.key}:*" },
+    { Effect = "Allow", Action = ["logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:PutRetentionPolicy", "logs:DeleteRetentionPolicy", "logs:ListTagsForResource", "logs:TagResource", "logs:UntagResource"], Resource = ["arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/keyless-cicd-${each.key}", "arn:aws:logs:${var.aws_region}:${var.account_id}:log-group:/aws/lambda/keyless-cicd-${each.key}:*"] },
     { Effect = "Allow", Action = ["logs:DescribeLogGroups"], Resource = "*" }
   ] })
 }
