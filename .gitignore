@@ -1,0 +1,11 @@
+.venv/
+.tools/
+.build/
+.terraform/
+*.tfstate*
+*.tfplan
+*.tfvars
+*.tfbackend
+__pycache__/
+.pytest_cache/
+.DS_Store
