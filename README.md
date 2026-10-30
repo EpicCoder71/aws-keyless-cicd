@@ -2,6 +2,8 @@
 
 Python Lambda deployments using Terraform and GitHub Actions OIDC. No AWS access keys belong in GitHub. Repository: https://github.com/EpicCoder71/aws-keyless-cicd
 
+Dev deployment verified successfully: [Actions run](https://github.com/EpicCoder71/aws-keyless-cicd/actions/runs/41009129439). See [verification details](docs/verification.md). Prod is configured but not deployed.
+
 ## Architecture
 
 Pull request → pytest + Terraform validation + Checkov. Main → the same checks → GitHub environment → OIDC → environment-specific deployment role → Terraform S3 state → Lambda → invocation smoke test.
