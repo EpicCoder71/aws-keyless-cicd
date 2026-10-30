@@ -28,36 +28,43 @@ terraform -chdir=terraform validate
 .venv/bin/python .venv/bin/checkov -d terraform --framework terraform --quiet
 ```
 
-## Bootstrap once with your local AWS session
+## Easy repeatable commands
 
-Verified intended account: `381491979691`, region `us-east-1`. Always run `aws sts get-caller-identity` before planning. Existing GitHub OIDC provider is read as a data source and remains owned by Cloud Resume.
+Run these from the project folder using your authenticated local AWS and GitHub CLI sessions:
 
 ```sh
-terraform -chdir=bootstrap plan -var='account_id=381491979691' -out=bootstrap.tfplan
-terraform -chdir=bootstrap apply bootstrap.tfplan
-terraform -chdir=bootstrap output
+make bootstrap       # Create the state bucket and dev/prod IAM roles
+make apply           # Deploy dev and run its health check
+make destroy         # Remove dev Lambda + logs; keep bootstrap ready
+make apply           # Rebuild dev whenever you want
+make status          # List remaining project resources
+make clean-all       # Destroy BOTH environments, roles, and ALL state versions/bucket
 ```
 
-Bootstrap state is local and ignored. Back it up securely; losing it makes cleanup and ownership tracking harder. The state bucket has deletion protection and versioning. Bootstrap is privileged; CI cannot apply it.
+`ENV=dev` is the default. Use `make apply ENV=prod` or `make destroy ENV=prod` for prod. `make plan ENV=dev` previews application changes. Each apply/destroy command prints a Terraform plan and executes it without an extra prompt. `make clean-all` is the explicit full-teardown command: it permanently removes historical Terraform state too. Source code, diagrams, and the shared Cloud Resume OIDC provider stay intact.
 
-Create GitHub environments `dev` and `prod`, each with deployment branch policy restricted to `main`. For prod, enable required reviewers where your GitHub plan supports it. Set these environment variables using the bootstrap outputs:
+Local lifecycle commands pause the GitHub deployment workflow and refuse to proceed while a GitHub run is active. This prevents a push from rebuilding Lambda just after you destroy it. Local commands are serialized within this checkout, and Terraform S3 locks protect application state. Avoid running lifecycle commands from multiple checkouts at once, especially full cleanup.
 
-| Variable | Value |
-| --- | --- |
-| AWS_ACCOUNT_ID | 381491979691 |
-| AWS_REGION | us-east-1 |
-| TF_STATE_BUCKET | bootstrap state_bucket output |
-| AWS_DEPLOY_ROLE_ARN | matching deployment_roles output |
+Requirements: Python 3, Terraform >=1.10 and <2, AWS CLI, GitHub CLI, and `make`. No Python packages are required for lifecycle commands. They verify account `381491979691` and use `us-east-1`. Authenticate AWS with your local session and GitHub with `gh auth login`. The project-local `.tools/terraform` is preferred; otherwise use the system Terraform or override it:
 
-Trust uses the verified immutable subject prefix `repo:EpicCoder71@57415684/aws-keyless-cicd@1439298585` plus `:environment:dev` or `:environment:prod`. Environment branch restrictions are essential because the environment subject itself does not identify a branch.
+```sh
+TERRAFORM=/path/to/terraform make apply
+```
 
-Push main to deploy dev. Use **Actions → Test and deploy → Run workflow** on main to apply prod. Checkov scans application Terraform; bootstrap requires separate IAM review and is validated for syntax/provider compatibility. Checkov exceptions in application code document deliberate demo cost/scope tradeoffs.
+Bootstrap state remains local in ignored `bootstrap/terraform.tfstate`; securely retain it between sessions. Application state lives in S3 with separate dev/prod keys. Bootstrap must exist before an application apply. Repeated application destroy and full cleanup handle an already-empty project. If AWS resources exist but bootstrap state is missing, full cleanup stops so you can recover/import state.
 
-## Teardown
+### Optional GitHub OIDC deployment
 
-Run the workflow with operation `destroy` and confirmation `destroy-dev` or `destroy-prod`. This removes the chosen Lambda and log group; state and bootstrap roles remain so redeploying works. Destroy both environments before removing bootstrap resources. The shared Cloud Resume OIDC provider is never destroyed here.
+```sh
+make bootstrap
+make github          # Recreate environment variables/rules and enable the workflow
+```
 
-To remove the bootstrap stack completely, first securely retain any needed state, review and remove the bucket's `prevent_destroy` guard, empty **all object versions and delete markers**, then plan and apply bootstrap destruction using your local AWS session. This permanently deletes project state; keep this a deliberate local operation.
+Push main to deploy dev, or use **Actions → Test and deploy → Run workflow** on main for dev/prod apply/destroy. `make github` enables CI deployment; the next local plan/apply/destroy/bootstrap/clean-all pauses it again. Enable it deliberately when returning to GitHub-driven deployments. For prod, configure required reviewers where your GitHub plan supports them.
+
+Trust uses the verified immutable subject prefix `repo:EpicCoder71@57415684/aws-keyless-cicd@1439298585` plus `:environment:dev` or `:environment:prod`. GitHub environments are restricted to main. `make github` sets non-secret account, region, bucket, and environment role identifiers. Checkov scans application Terraform; bootstrap is validated separately and requires IAM review.
+
+Full cleanup automatically uses an isolated bootstrap configuration with the bucket deletion guard removed only for that operation. The source guard stays enabled. It destroys both application environments first, refuses to delete state if managed resources or an active state lock remain, removes all state versions/delete markers, destroys bootstrap, removes GitHub deployment environments, and checks for remaining project resources.
 
 ## Cost and limitations
 
